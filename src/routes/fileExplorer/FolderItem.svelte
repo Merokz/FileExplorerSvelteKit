@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import BaseFolderItem from "./BaseFolderItem.svelte";
-  import { openFileContent, openFileHandle, isEditMode, originalFileContent } from "./store";
+  import { openFileContent, openFileHandle, isEditMode, originalFileContent, selectedFile } from "./store";
 
   export let item: {
     kind: string;
@@ -29,6 +29,7 @@
       openFileContent.set(text); // Update the store with the file's contents
       originalFileContent.set(text); // Store the original contents
       openFileHandle.set(item.fileHandle);
+      selectedFile.set(file.name); // Set the name of the selected file
       isEditMode.set(false); // Leave edit mode when a new file is opened
     }
   }

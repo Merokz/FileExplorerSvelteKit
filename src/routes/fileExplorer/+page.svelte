@@ -8,6 +8,9 @@
         openFileHandle,
         originalFileContent,
         isEditMode,
+        isJsonOnlyMode,
+        selectedFolder,
+        selectedFile
     } from "./store";
 
     // Define a type for the contents of a folder
@@ -42,7 +45,10 @@
             } else {
                 childItem.name = `📄 ${childItem.name}`;
             }
-            contents.push(childItem);
+            // If the mode is JSON only, only add items that are either directories or .json files
+            if (!$isJsonOnlyMode || childItem.kind === "directory" || childItem.name.endsWith(".json")) {
+                contents.push(childItem);
+            }
         }
         return contents;
     }
@@ -66,15 +72,16 @@
     }
 
     // Modify the selectFolder function to load only the contents of the root folder
-    async function selectFolder() {
-        const handle = await window.showDirectoryPicker();
-        if (!handle) {
-            console.log("No handle provided or obtained, exiting selectFolder");
-            return;
-        }
-        folderHandle.set(handle);
-        folderContents.set(await getDirectoryContents(handle));
+   async function selectFolder() {
+    const handle = await window.showDirectoryPicker();
+    if (!handle) {
+        console.log("No handle provided or obtained, exiting selectFolder");
+        return;
     }
+    folderHandle.set(handle);
+    selectedFolder.set(handle.name);  // Update the selectedFolder store with the directory name
+    folderContents.set(await getDirectoryContents(handle));
+}
 
     function editFile() {
         if ($isEditMode) {
@@ -100,20 +107,33 @@
 
         isEditMode.set(false);
     }
+
+    function toggleJsonOnlyMode() {
+        isJsonOnlyMode.set(!isJsonOnlyMode);
+    }
 </script>
 
 <div class="container">
     <div class="button-container">
         <!-- Button to select a folder -->
         <button id="select-folder-button" on:click={() => selectFolder()}>
-            Select Folder
+            Select Folder 
         </button>
 
         <!-- Button to refresh the folder contents -->
         <button id="refresh-folder-button" on:click={() => selectFolder()}>
             Refresh Folder
         </button>
+
+        <!-- Checkbox to toggle JSON only mode -->
+        <label>
+            <input type="checkbox" bind:checked={$isJsonOnlyMode} on:change={toggleJsonOnlyMode}>
+            JSON only mode
+        </label>
     </div>
+
+    <!-- Display the name of the selected folder -->
+    <p>Selected folder: {$selectedFolder}</p>
 
     <!-- List of the selected folder's contents -->
     <ul>
@@ -123,6 +143,9 @@
     </ul>
 </div>
 <div class="right-side">
+    <!-- Display the name of the selected file -->
+    <p>Selected file: {$selectedFile}</p>
+
     {#if $openFileContent}
         <button on:click={editFile}>Edit</button>
         <button on:click={saveFile}>Save</button>
@@ -144,13 +167,17 @@
         box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
         overflow: auto;
         position: fixed;
-        right: 0;
+        background-color: antiquewhite;
+        margin: auto auto auto 250px;
     }
     .container {
         min-width: 250px; /* Set a fixed width */
         width: fit-content;
         height: 400px; /* Set a fixed height */
-        margin: auto 100; /* Align to the left */
+        margin: 0; /* Align to the left */
+        position: fixed;
+        left: 0;
+        background-color: aliceblue;
         padding: 20px;
         border: 1px solid #ddd;
         border-radius: 5px;
@@ -165,6 +192,7 @@
     .right-side .editable {
         background: none;
         border: none;
+        background-color: rgb(233, 217, 194);
         padding: 0;
         width: 100%;
         height: 100%;
